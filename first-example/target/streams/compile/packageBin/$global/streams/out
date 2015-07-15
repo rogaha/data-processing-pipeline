@@ -1,0 +1,25 @@
+[0m[[0minfo[0m] [0mPackaging /spark-examples/first-example/target/scala-2.10/spark-streaming-kafka-project_2.10-0.1.jar ...[0m
+[0m[[0mdebug[0m] [0mInput file mappings:[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount$$anonfun$4.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount$$anonfun$4.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount$$anonfun$1.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount$$anonfun$1.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount$$anonfun$2.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount$$anonfun$2.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/StreamingExamples$$anonfun$setStreamingLogLevels$1.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/StreamingExamples$$anonfun$setStreamingLogLevels$1.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/StreamingExamples.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/StreamingExamples.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/StreamingExamples$.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/StreamingExamples$.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount$$anonfun$3.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount$$anonfun$3.class[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount.class[0m
+[0m[[0mdebug[0m] [0m	org[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org[0m
+[0m[[0mdebug[0m] [0m	org/sparkstreaming/DirectKafkaWordCount$.class[0m
+[0m[[0mdebug[0m] [0m	  /spark-examples/first-example/target/scala-2.10/classes/org/sparkstreaming/DirectKafkaWordCount$.class[0m
+[0m[[0minfo[0m] [0mDone packaging.[0m
