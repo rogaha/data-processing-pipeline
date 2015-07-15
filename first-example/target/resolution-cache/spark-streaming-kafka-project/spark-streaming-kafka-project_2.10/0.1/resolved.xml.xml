@@ -4,7 +4,7 @@
 		module="spark-streaming-kafka-project_2.10"
 		revision="0.1"
 		status="integration"
-		publication="20150715022547"
+		publication="20150715051615"
 	>
 		<description>
 		Spark Streaming + Kafka Project
