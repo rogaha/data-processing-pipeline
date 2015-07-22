@@ -1,0 +1,80 @@
+<html>
+  <head>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type='text/javascript'>
+     google.load('visualization', '1', {'packages': ['geochart']});
+     google.setOnLoadCallback(drawMarkersMap);
+
+      var wrapper = null;
+
+      function drawMarkersMap() {
+
+      wrapper = new google.visualization.ChartWrapper(
+        {
+          chartType: 'GeoChart',
+          // dataSourceUrl: 'https://docs.google.com/spreadsheets/d/1arKFIOBqdTPEx4jzgN9y8r8I0H6iPqc-Y372HLT9BvY/gviz/tqpub',
+          // query: 'SELECT A,B,C',
+          // dataTable: data,
+        options:{
+            displayMode: 'markers'
+        },
+          containerId: 'chart_div'
+        });
+      $.ajax({
+            type: "GET",
+            url: "/get_values",
+            data : {},
+            success: function(results) {
+               
+               var data = [['Location', 'Text', 'Retweets', 'Favorites']]
+               for (var i = 0; i < results.length; i++) {
+                  tweet = results[i];
+                  
+                  data.push([tweet['location'], 
+                             tweet['title'],
+                             tweet['retweets'],
+                             tweet['favorites']])
+               };
+
+              wrapper.setDataTable(data);
+              wrapper.draw();
+              console.log(results.length);
+            }
+        }
+      )
+      // wrapper.setRefreshInterval(1);
+      // wrapper.draw();
+    };
+    // setInterval(   //Periodically 
+      // function()
+      // {
+      //    $.ajax({
+      //       type: "GET",
+      //       url: "/get_values",
+      //       data : {},
+      //       success: function(results) {
+               
+      //          var data = [['Location', 'Text', 'Retweets', 'Favorites']]
+      //          for (var i = 0; i < results.length; i++) {
+      //             tweet = results[i];
+                  
+      //             data.push([tweet['location'], 
+      //                        tweet['title'],
+      //                        tweet['retweets'],
+      //                        tweet['favorites']])
+      //          };
+
+      //         wrapper.setDataTable(data);
+      //         wrapper.draw();
+      //         console.log(results.length);
+      //       }
+      //     }
+      //     );
+      //  }, 6000);
+    </script>
+  </head>
+  <body>
+    <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  </body>
+</html>

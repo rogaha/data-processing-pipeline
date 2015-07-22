@@ -1,0 +1,93 @@
+zookeeper:
+  image: wurstmeister/zookeeper
+  ports:
+    - "2181"
+
+kafka:
+  image: wurstmeister/kafka:0.8.2.1
+  ports:
+    - "9092"
+  links:
+    - zookeeper:zk
+  environment:
+    constraint:com.docker.network.driver.overlay.neighbor_ip=45.55.136.170
+    KAFKA_ADVERTISED_HOST_NAME: 45.55.136.170
+    KAFKA_CREATE_TOPICS: "twitter-tracking"
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+
+sparkmaster:
+  image: gettyimages/spark
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip master
+  hostname: master
+  environment:
+    SPARK_CONF_DIR: /conf
+  ports:
+    - "4040:4040"
+    - "6066:6066"
+    - "7077:7077"
+    - "8080:8080"
+  volumes:
+    - ./conf/master:/conf
+    - ./data:/tmp/data
+
+cassandra:
+  image: cassandra:2.1.8
+  hostname: cassandra
+  ports:
+    - "9042"
+
+sparkworker:
+  image: gettyimages/spark
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+  hostname: worker
+  environment:
+    SPARK_CONF_DIR: /conf
+    SPARK_WORKER_CORES: 1
+    SPARK_WORKER_MEMORY: 1g
+    SPARK_WORKER_PORT: 8881
+    SPARK_WORKER_WEBUI_PORT: 8081
+  links:
+    - kafka
+    - sparkmaster
+    - cassandra
+  ports:
+    - "8081"
+  volumes:
+    - ./conf/worker:/conf
+    - ./data:/tmp/data
+
+twitterkafkaproducer:
+  image: rogaha/twitter-kafka-producer
+  command: /twitter_kafka_producer.py
+  hostname: twitterkafkaproducer
+  environment:
+    SPARK_CONF_DIR: /conf
+    ACCESS_TOKEN: "53994547-8FwWtZubCu80mYxRIerHc5pmywLTOfT0tvrzJ6Uqi"
+    ACCESS_TOKEN_SECRET: "dsGPNhfWtTCxBrIysd6lf61kp4j0AMqmS2eMg84zvNNFH"
+    CONSUMER_KEY: "mGQnmfMQDHLXfC5WSZJiW58kV"
+    CONSUMER_SECRET: "yeOChktZnFpyFSe4EOO5EcdEMqjcWUlTjHz7LexzBw84hmCkCD"
+  links:
+    - kafka
+
+webserver:
+  image: rogaha/twitter-demo-webserver
+  command: /webserver.py
+  hostname: webserver
+  environment:
+    CASSANDRA_HOST_NODE: /conf
+    MINUTES_LOOCKBACK: 10
+  links:
+    - cassandra
+
+  sparkjob:
+  image: rogaha/spark-job
+  command: /start_spark.py
+  hostname: worker
+  environment:
+    SPARK_CONF_DIR: /conf
+  links:
+    - kafka
+    - sparkmaster
+    - cassandra
+

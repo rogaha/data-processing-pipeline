@@ -1,8 +1,5 @@
-# Author: Roberto Gandolfo Hashioka
-# Date: 07/22/2015
-
 FROM debian:jessie
-MAINTAINER Roberto Gandolfo Hashioka
+MAINTAINER Getty Images "https://github.com/gettyimages"
 
 # Add SBT package for Spark development
 RUN echo "deb http://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list
@@ -36,12 +33,4 @@ RUN curl -sL --retry 3 \
   | tar x -C /usr/ \
   && ln -s $SPARK_HOME /usr/spark
 
-# Copy the spark job files
-COPY ./spark-streaming-kafka-cassandra:/spark-job
-
-WORKDIR /spark-job
-
-# Build the jar file
-RUN sbt assembly
-
-ENTRYPOINT spark-submit --class org.sevenmob.spark.streaming.DirectKafkaProcessing --master local[*] target/scala-2.10/TwitterProcessingPipeLine-assembly-0.1.jar
+CMD /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master

@@ -6,6 +6,8 @@ version := "0.1"
 
 scalaVersion := "2.10.4"
 
+resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+
 // kafka streaming related dependencies
 libraryDependencies += "org.apache.spark" %% "spark-core" % "1.4.0"
 libraryDependencies += "org.apache.spark" %% "spark-sql"  % "1.4.0"
