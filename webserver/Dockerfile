@@ -2,7 +2,7 @@
 # Date: 07/22/2015
 
 FROM stackbrew/ubuntu:14.04
-MAINTAINER Roberto Gandolfo Hashioka
+MAINTAINER Roberto G. Hashioka "roberto_hashioka@hotmail.com"
 
 # Install Pip
 RUN apt-get update
@@ -14,9 +14,12 @@ RUN pip install -r /build/requirements.txt
 
 # Copy python app
 ADD ./webserver.py /
+ADD ./start.sh /
 ADD ./templates /templates
 
+EXPOSE 5000
+
 # Start the Kafka producer process
-CMD ["/usr/bin/python","/webserver.py"] 
+CMD ["./webserver.py"] 
 
 

@@ -1,0 +1,98 @@
+zookeeper:
+  image: wurstmeister/zookeeper
+  ports:
+    - "2181"
+
+kafka:
+  image: wurstmeister/kafka:0.8.2.1
+  ports:
+    - "9092:9092"
+  links:
+    - zookeeper:zk
+  environment:
+    # constraint:com.docker.network.driver.overlay.bind_interface=eth0
+    KAFKA_ADVERTISED_HOST_NAME: 192.168.59.103
+    KAFKA_CREATE_TOPICS: "tweets"
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+
+sparkmaster:
+  image: gettyimages/spark:1.4.0-hadoop-2.6
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip master
+  hostname: master
+  environment:
+    SPARK_CONF_DIR: /conf
+  ports:
+    - "4040:4040"
+    - "6066:6066"
+    - "7077:7077"
+    - "8080:8080"
+  volumes:
+    - ./conf/master:/conf
+    - ./data:/tmp/data
+
+cassandra:
+  image: cassandra:2.2.0
+  hostname: cassandra
+  ports:
+    - "9042:9042"
+
+sparkworker:
+  image: gettyimages/spark:1.4.0-hadoop-2.6
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+  hostname: worker
+  environment:
+    SPARK_CONF_DIR: /conf
+    SPARK_WORKER_CORES: 1
+    SPARK_WORKER_MEMORY: 1g
+    SPARK_WORKER_PORT: 8881
+    SPARK_WORKER_WEBUI_PORT: 8081
+  links:
+    - kafka
+    - sparkmaster
+    - cassandra
+  ports:
+    - "8081"
+  volumes:
+    - ./conf/worker:/conf
+    - ./data:/tmp/data
+
+twitterkafkaproducer:
+  image: rogaha/twitter-kafka-producer
+  restart: always
+  command: /start.sh
+  hostname: twitterkafkaproducer
+  environment:
+    SPARK_CONF_DIR: /conf
+    ACCESS_TOKEN: ""
+    ACCESS_TOKEN_SECRET: ""
+    CONSUMER_KEY: ""
+    CONSUMER_SECRET: ""
+    KEYWORDS_LIST: ""
+    KAFKA_TOPIC_NAME: "tweets"
+  links:
+    - kafka
+
+webserver:
+  image: rogaha/twitter-demo-webserver
+  restart: always
+  command: /start.sh
+  hostname: webserver
+  links:
+    - cassandra
+  ports:
+    - "80:5000"
+
+sparkjob:
+  image: rogaha/spark-job
+  restart: always
+  command: /spark-job/start.sh
+  hostname: spark-job
+  environment:
+    SPARK_CONF_DIR: /conf
+    KAFKA_TOPIC_NAME: "tweets"
+  links:
+    - kafka
+    - sparkmaster
+    - cassandra
+

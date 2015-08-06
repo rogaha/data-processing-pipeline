@@ -68,11 +68,9 @@ object DirectKafkaProcessing {
 
     val Array(brokers, topics, cassandraHost) = args
 
-    println(cassandraHost)
-
     // Create context with 2 second batch interval
     val conf = new SparkConf().setAppName("DirectKafkaProcessing")
-	.setMaster("local[*]")
+	    .setMaster("local[*]")
     	.set("spark.cassandra.connection.host", cassandraHost)
     	.set("spark.cleaner.ttl", "5000")
     val sc = new SparkContext(conf)
