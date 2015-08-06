@@ -11,7 +11,7 @@ kafka:
     - zookeeper:zk
   environment:
     # constraint:com.docker.network.driver.overlay.bind_interface=eth0
-    KAFKA_ADVERTISED_HOST_NAME: 192.168.59.103
+    KAFKA_ADVERTISED_HOST_NAME: ""
     KAFKA_CREATE_TOPICS: "tweets"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
