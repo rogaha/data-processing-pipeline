@@ -43,20 +43,23 @@ import org.sevenmob.geocode._
  * Usage: DirectKafkaProcessing <brokers> <topics>
  *   <brokers> is a list of one or more Kafka brokers
  *   <topics> is a list of one or more kafka topics to consume from
+ *   <cassandra-host> is hostname or IP to any of the cassandra nodes
+ *   <google-api-key> Google Geoconding API Key
  *
  * Example:
  *    $ bin/run-example org.sevenmob.spark.streaming.DirectKafkaProcessing broker1-host:port,broker2-host:port \
- *    topic1,topic2
+ *    topic1,topic2 cassandra-host apikey123
  */
 object DirectKafkaProcessing {
 
   def main(args: Array[String]) {
-    if (args.length < 3) {
+    if (args.length < 4) {
       System.err.println(s"""
-        |Usage: DirectKafkaProcessing <brokers> <topics>
+        |Usage: DirectKafkaProcessing <brokers> <topics> <cassandra-host> <google-api-key>
         |  <brokers> is a list of one or more Kafka brokers
         |  <topics> is a list of one or more kafka topics to consume from
         |  <cassandra-host> is hostname or IP to any of the cassandra nodes
+        |  <google-api-key> Google geoconding API Key
         |
         """.stripMargin)
       System.exit(1)
@@ -66,7 +69,14 @@ object DirectKafkaProcessing {
 
     StreamingExamples.setStreamingLogLevels()
 
-    val Array(brokers, topics, cassandraHost) = args
+    val Array(brokers, topics, cassandraHost, googleAPIKey) = args
+
+    // if googleAPIKey is equal to "." convert it to empty string
+    val apiKey = googleAPIKey.replaceAll(".", "") 
+
+    // Define a simple cache to avoid unnecessary API calls
+    val cache = collection.mutable.Map[String, Point]()
+    def cachedLocation(location: String) = cache.getOrElseUpdate(location, GeocodeObj ? (Parameters(location, apiKey)))
 
     // Create context with 2 second batch interval
     val conf = new SparkConf().setAppName("DirectKafkaProcessing")
@@ -93,7 +103,7 @@ object DirectKafkaProcessing {
       ssc, kafkaParams, topicsSet)
         .map(_._2)
 
-   //val parquetTable = "tweets8"
+    //val parquetTable = "tweets8"
 
     stream.foreachRDD { rdd =>
     /* this check is here to handle the empty collection error
@@ -113,7 +123,7 @@ object DirectKafkaProcessing {
           val id = java.util.UUID.fromString(new com.eaio.uuid.UUID().toString())
           val text = tweetData.map(t => t(1)).collect().head
           val profileUrl = tweetData.map(t => t(2)).collect().head
-          val p = GeocodeObj ? (Parameters(address.toString, ""))
+          val p = cachedLocation(address.toString)
           tweetData.show()
           val collection = sc.parallelize(Seq(Tweet(text.toString,
                                                     0,0,address.toString, id,

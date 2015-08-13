@@ -104,6 +104,7 @@ ACCESS_TOKEN_SECRET: ""
 CONSUMER_KEY: ""
 CONSUMER_SECRET: ""
 KEYWORDS_LIST: ""
+GOOGLE_GEOCODING_API_KEY: "." (use "." to ignore it)
 ```
 In order to get the *public IP* of your Digital Ocean droplet you can run from the VM:
 ```

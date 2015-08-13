@@ -91,6 +91,7 @@ sparkjob:
   environment:
     SPARK_CONF_DIR: /conf
     KAFKA_TOPIC_NAME: "tweets"
+    GOOGLE_GEOCOING_API_KEY: "."
   links:
     - kafka
     - sparkmaster
