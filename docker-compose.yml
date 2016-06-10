@@ -17,16 +17,27 @@ kafka:
     - /var/run/docker.sock:/var/run/docker.sock
 
 sparkmaster:
-  image: gettyimages/spark:1.4.0-hadoop-2.6
-  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip master
+  image: gettyimages/spark:1.6.1-hadoop-2.6
+  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master -h master
   hostname: master
   environment:
-    SPARK_CONF_DIR: /conf
+    - "SPARK_CONF_DIR=/conf"
+    - "constraint:node==docker-512mb-sfo1-02"
+    - "MASTER=spark://master:7077"
+  expose:
+    - 7001
+    - 7002
+    - 7003
+    - 7004
+    - 7005
+    - 7006
+    - 7077
+    - 6066
   ports:
-    - "4040:4040"
-    - "6066:6066"
-    - "7077:7077"
-    - "8080:8080"
+    - 4040:4040
+    - 6066:6066
+    - 7077:7077
+    - 8080:8080
   volumes:
     - ./conf/master:/conf
     - ./data:/tmp/data
@@ -38,7 +49,7 @@ cassandra:
     - "9042:9042"
 
 sparkworker:
-  image: gettyimages/spark:1.4.0-hadoop-2.6
+  image: gettyimages/spark:1.6.1-hadoop-2.6
   command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker
   environment:
@@ -47,12 +58,19 @@ sparkworker:
     SPARK_WORKER_MEMORY: 1g
     SPARK_WORKER_PORT: 8881
     SPARK_WORKER_WEBUI_PORT: 8081
-  links:
-    - kafka
-    - sparkmaster
-    - cassandra
+  # links:
+  #   - kafka
+  #   - sparkmaster
+  #   - cassandra
+  expose:
+    - 7012
+    - 7013
+    - 7014
+    - 7015
+    - 7016
+    - 8881
   ports:
-    - "8081"
+    - 8081:8081
   volumes:
     - ./conf/worker:/conf
     - ./data:/tmp/data
@@ -78,22 +96,24 @@ webserver:
   restart: always
   command: /start.sh
   hostname: webserver
-  links:
-    - cassandra
+  # links:
+  #   - cassandra
   ports:
     - "80:5000"
 
 sparkjob:
-  image: rogaha/spark-job
+  image: rogaha/spark-job-v2
   restart: always
   command: /spark-job/start.sh
   hostname: spark-job
   environment:
-    SPARK_CONF_DIR: /conf
-    KAFKA_TOPIC_NAME: "tweets"
-    GOOGLE_GEOCOING_API_KEY: "."
-  links:
-    - kafka
-    - sparkmaster
-    - cassandra
+      - "constraint:node==docker-512mb-sfo1-02"
+      - "SPARK_CONF_DIR=/conf"
+      - "KAFKA_TOPIC_NAME=repo_events,search_events"
+      - "KAFKA_BROKERS=10.1.13.103:9092,10.1.24.78:9092,10.1.25.176:9092,10.1.44.150:9092,10.1.45.137:9092"
+      - "CASSANDRA_HOSTNAME=cassandra-1"
+  # links:
+  #   - kafka
+  #   - sparkmaster
+  #   - cassandra
 

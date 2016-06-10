@@ -1,7 +1,7 @@
 # Author: Roberto Gandolfo Hashioka
 # Date: 07/22/2015
 
-FROM gettyimages/spark:1.4.0-hadoop-2.6
+FROM gettyimages/spark:1.6.1-hadoop-2.6
 MAINTAINER Roberto G. Hashioka "roberto_hashioka@hotmail.com"
 
 # Add SBT package for Spark development

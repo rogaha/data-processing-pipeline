@@ -16,6 +16,7 @@ RUN pip install -r /build/requirements.txt
 ADD ./webserver.py /
 ADD ./start.sh /
 ADD ./templates /templates
+ADD ./static /static
 
 EXPOSE 5000
 

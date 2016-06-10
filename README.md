@@ -10,7 +10,7 @@ See below the project's architecture:
 ![Docker Architecture](images/project-architecture.png "Project Architecture")
 
 ##What's happening under the hood? 
-We connect to the twitter streaming API (https://dev.twitter.com/streaming/overview) and start to listen to events based on a list of keywords, these events are forwarded directly to Kafka (no parsing). In the middle, there is a spark job collecting those events, converting them to Spark SQL context (http://spark.apache.org/sql/) which filters the kafka message and extract only the fields of interest which in this case are: *user.location, text and user.profile_image_url*, once we have that, we convert the *location* into coordinates (lat,lng) using the google geoconding API (https://developers.google.com/maps/documentation/geocoding/intro) and persist the data into Cassandra. 
+We connect to the twitter streaming API (https://dev.twitter.com/streaming/overview) and start to listen to events based on a list of keywords, these events are forwarded directly to Kafka (no parsing). In the middle, there is a spark job collecting those events, converting them to Spark SQL context (http://spark.apache.org/sql/) and filtering the kafka message and extract only the fields of interest which in this case are: *user.location, text and user.profile_image_url*. Once we have that, we convert the *location* into coordinates (lat,lng) using the google geoconding API (https://developers.google.com/maps/documentation/geocoding/intro) and persist the data into Cassandra. 
 
 Finally, there is a web application running that is fetching data from Cassandra and rendering the tweets of interest on the world map.
 
@@ -130,10 +130,10 @@ Creating dataprocessingpipeline_webserver_1...
 Creating dataprocessingpipeline_sparkworker_1...
 ```
 
-After that you should wait a few seconds, I've a 15 seconds delay before starting the spark-job, kafka producer and webcontainer containers, in order to make all the dependencies are up and running.
-###Step 5: Access the IP/Hostname of your machine from your browser
-I've cloned this repo, updated the environment variables and started the containers on Azure. 
-####Here is the link to access a live instance: http://docker-azure.cloudapp.net/
+After that you should wait a few seconds, I've added a 15 seconds delay before starting the spark-job, kafka producer and webcontainer containers, in order to make sure all the dependencies are up and running.
+###Step 5: Access the IP/Hostname of your machine/VM from your browser
+I've cloned this repo, updated the environment variables and started the containers on Azure.
+####You can accces it here: http://docker-azure.cloudapp.net/
 
 ##Open Source Projects Used
 

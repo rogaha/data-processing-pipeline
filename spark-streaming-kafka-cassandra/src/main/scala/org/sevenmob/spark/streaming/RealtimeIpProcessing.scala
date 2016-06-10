@@ -71,30 +71,26 @@ object DirectKafkaProcessing {
 
     val Array(brokers, topics, cassandraHost, googleAPIKey) = args
 
-    // if googleAPIKey is equal to "." convert it to empty string
-    val apiKey = googleAPIKey.replaceAll(".", "") 
-
-    // Define a simple cache to avoid unnecessary API calls
-    val cache = collection.mutable.Map[String, Point]()
-    def cachedLocation(location: String) = cache.getOrElseUpdate(location, GeocodeObj ? (Parameters(location, apiKey)))
-
     // Create context with 2 second batch interval
     val conf = new SparkConf().setAppName("DirectKafkaProcessing")
 	    .setMaster("local[*]")
     	.set("spark.cassandra.connection.host", cassandraHost)
     	.set("spark.cleaner.ttl", "5000")
     val sc = new SparkContext(conf)
-    val ssc = new StreamingContext(sc, Seconds(2))
+    val ssc = new StreamingContext(sc, Seconds(1))
     val sqlContext = new SQLContext(sc)
+    val geoUtil = new GeoLookup()
 
-    val keySpaceName = "twitter"
-    val tableName = "tweets"
+    // val keySpaceName = "twitter"
+    // val tableName = "tweets"
 
     /* Cassandra setup */
     CassandraConnector(conf).withSessionDo { session =>
-	  session.execute("CREATE KEYSPACE IF NOT EXISTS " + keySpaceName + " WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-	  session.execute("CREATE TABLE IF NOT EXISTS " + keySpaceName + "." + tableName + " (id timeuuid, title text, favorites int, retweets int, location text, lat double, lon double, profile_image_url text, id_str text, PRIMARY KEY (id_str, id))")
+	  session.execute("CREATE KEYSPACE IF NOT EXISTS docker_api_calls WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+	  session.execute("CREATE TABLE IF NOT EXISTS docker_api_calls.aggregated_metrics (action_time timeuuid, action text, count int, ip_address text, lat double, lon double, PRIMARY KEY (ip_address, action_time))")
     }
+    //INSERT INTO docker_api_calls.aggregated_metrics (action_time, action, count, ip_address)
+    //VALUES(now(), 'pull', 1, '123.123.123.123');
 
     // Create direct kafka stream with brokers and topics and save the results to Cassandra
     val topicsSet = topics.split(",").toSet
@@ -109,26 +105,26 @@ object DirectKafkaProcessing {
     /* this check is here to handle the empty collection error
        after the 3 items in the static sample data set are processed */
       if (rdd.toLocalIterator.nonEmpty) {
-          sqlContext.jsonRDD(rdd).registerTempTable("Tweets")
+          val temp = sqlContext.jsonRDD(rdd)
+          println(temp)
+          sqlContext.jsonRDD(rdd).registerTempTable("ApiCall")
           //jsonData.write.parquet("data/" + parquetTable + "/key=" + java.lang.System.currentTimeMillis())
           //val extraFieldsRDD = sc.parallelize(""" {"lat":0.0,"lon":0.0}  """ :: Nil)
           //val extraJsonFields = sqlContext.read.json(extraFieldsRDD)
           //extraJsonFields.write.parquet("data/" + parquetTable + "/key=" + java.lang.System.currentTimeMillis())
           //val parquetData = sqlContext.read.parquet("data/" + parquetTable)
           //parquetData.registerTempTable("Tweets")
-          val tweetData = sqlContext.sql("""SELECT user.location, 
-                                            text, 
-                                            user.profile_image_url FROM Tweets""")
+          val tweetData = sqlContext.sql("""SELECT * FROM ApiCall""")
           val address = tweetData.map(t => t(0)).collect().head
-          val id = java.util.UUID.fromString(new com.eaio.uuid.UUID().toString())
+          val action_time = java.util.UUID.fromString(new com.eaio.uuid.UUID().toString())
           val text = tweetData.map(t => t(1)).collect().head
           val profileUrl = tweetData.map(t => t(2)).collect().head
-          val p = cachedLocation(address.toString)
+          val p = geoUtil.fromIP(address.toString).getOrElse((0.0,0.0))
           tweetData.show()
-          val collection = sc.parallelize(Seq(Tweet(text.toString,
-                                                    0,0,address.toString, id,
-                                                    p.lat,p.lng, "id_str", profileUrl.toString)))
-          collection.saveToCassandra("twitter","tweets")
+          val collection = sc.parallelize(Seq(ApiCall(text.toString,
+                                                      0, address.toString, action_time,
+                                                      p._1,p._2)))
+          collection.saveToCassandra("docker_api_calls","aggregated_metrics")
       }
     }
 

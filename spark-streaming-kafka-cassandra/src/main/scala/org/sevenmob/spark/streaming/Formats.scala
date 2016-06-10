@@ -13,3 +13,11 @@ case class Tweet(title:String,
                    lon: Double,
                    id_str: String,
                    profile_image_url: String)
+
+// Define the tweet class fields
+case class ApiCall(action:String,
+                   count:BigInt,
+                   ip_address:String,
+                   action_time: UUID,
+                   lat: Double,
+                   lon: Double)
