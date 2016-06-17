@@ -20,4 +20,7 @@ case class ApiCall(action:String,
                    ip_address:String,
                    action_time: UUID,
                    lat: Double,
-                   lon: Double)
+                   lon: Double
+                   city: String,
+                   region: String,
+                   country: String)

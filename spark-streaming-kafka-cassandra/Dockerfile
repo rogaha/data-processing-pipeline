@@ -1,7 +1,7 @@
 # Author: Roberto Gandolfo Hashioka
-# Date: 07/22/2015
+# Date: 06/12/2016
 
-FROM gettyimages/spark:1.6.1-hadoop-2.6
+FROM rogaha/spark-hdfs-base
 MAINTAINER Roberto G. Hashioka "roberto_hashioka@hotmail.com"
 
 # Add SBT package for Spark development
@@ -17,6 +17,9 @@ ADD ./src /spark-job/src
 ADD ./build.sbt /spark-job/
 ADD ./version.sbt /spark-job/
 ADD ./start.sh /spark-job/
+ADD ./geocode_db /spark-job/geocode_db
+
+# Move 
 
 WORKDIR /spark-job
 

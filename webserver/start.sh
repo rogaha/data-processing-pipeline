@@ -4,4 +4,4 @@
 echo "Sleeping 15 seconds..."
 sleep 15
 
-exec /webserver.py
+exec "python -W ignore /webserver.py"

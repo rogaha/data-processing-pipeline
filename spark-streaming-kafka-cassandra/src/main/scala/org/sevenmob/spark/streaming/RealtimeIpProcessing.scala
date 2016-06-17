@@ -19,9 +19,9 @@
 package org.sevenmob.spark.streaming
 
 import kafka.serializer.StringDecoder
-
+import java.util.Calendar
 import org.apache.spark.streaming._
-import com.datastax.spark.connector._ 
+import com.datastax.spark.connector._
 import com.datastax.spark.connector.streaming._
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.spark.streaming.kafka._
@@ -52,14 +52,15 @@ import org.sevenmob.geocode._
  */
 object DirectKafkaProcessing {
 
+  def toDouble: (Any) => Double = { case i: Int => i case f: Float => f case d: Double => d }
+
   def main(args: Array[String]) {
-    if (args.length < 4) {
+    if (args.length < 3) {
       System.err.println(s"""
         |Usage: DirectKafkaProcessing <brokers> <topics> <cassandra-host> <google-api-key>
         |  <brokers> is a list of one or more Kafka brokers
         |  <topics> is a list of one or more kafka topics to consume from
         |  <cassandra-host> is hostname or IP to any of the cassandra nodes
-        |  <google-api-key> Google geoconding API Key
         |
         """.stripMargin)
       System.exit(1)
@@ -69,25 +70,51 @@ object DirectKafkaProcessing {
 
     StreamingExamples.setStreamingLogLevels()
 
-    val Array(brokers, topics, cassandraHost, googleAPIKey) = args
+    val Array(brokers, topics, cassandraHost) = args
 
     // Create context with 2 second batch interval
-    val conf = new SparkConf().setAppName("DirectKafkaProcessing")
-	    .setMaster("local[*]")
-    	.set("spark.cassandra.connection.host", cassandraHost)
-    	.set("spark.cleaner.ttl", "5000")
+    val conf = new SparkConf().setMaster("spark://sparkmaster.weave.local:7077")
+        .set("spark.shuffle.manager", "SORT")
+        .set("spark.streaming.unpersist", "true")
+        .set("spark.cassandra.connection.host", cassandraHost)
+        .set("spark.cleaner.ttl", "5000")
+
+
+    var sqlStatement = new String
+    if (topics == "repo_events") {
+      conf.setAppName("PushesAndPullsEventsProcessing")
+  .set("spark.cores.max", "32")
+      sqlStatement = ("""
+        SELECT
+          payload.event_name,
+          payload.ip_address,
+          count(*)
+        FROM ApiCall
+        GROUP BY payload.event_name, payload.ip_address""")
+    }else if (topics == "search_events") {
+      conf.setAppName("SearchesEventsProcessing")
+  .set("spark.cores.max", "12")
+      sqlStatement = ("""
+        SELECT
+          event_type,
+          payload.ip_address,
+          count(*)
+        FROM ApiCall
+        GROUP BY event_type, payload.ip_address""")
+    }
+
     val sc = new SparkContext(conf)
-    val ssc = new StreamingContext(sc, Seconds(1))
+    val ssc = new StreamingContext(sc, Seconds(7))
     val sqlContext = new SQLContext(sc)
-    val geoUtil = new GeoLookup()
+    val geoUtil = new GeoIPLookup()
 
     // val keySpaceName = "twitter"
     // val tableName = "tweets"
 
     /* Cassandra setup */
     CassandraConnector(conf).withSessionDo { session =>
-	  session.execute("CREATE KEYSPACE IF NOT EXISTS docker_api_calls WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-	  session.execute("CREATE TABLE IF NOT EXISTS docker_api_calls.aggregated_metrics (action_time timeuuid, action text, count int, ip_address text, lat double, lon double, PRIMARY KEY (ip_address, action_time))")
+      session.execute("CREATE KEYSPACE IF NOT EXISTS docker_api_calls WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+    session.execute("CREATE TABLE IF NOT EXISTS docker_api_calls.aggregated_metrics (action_time timeuuid, action text, count int, ip_address text, lat double, lon double, city text, region text, country text, PRIMARY KEY (ip_address, action_time))")
     }
     //INSERT INTO docker_api_calls.aggregated_metrics (action_time, action, count, ip_address)
     //VALUES(now(), 'pull', 1, '123.123.123.123');
@@ -99,56 +126,41 @@ object DirectKafkaProcessing {
       ssc, kafkaParams, topicsSet)
         .map(_._2)
 
-    //val parquetTable = "tweets8"
-
     stream.foreachRDD { rdd =>
     /* this check is here to handle the empty collection error
        after the 3 items in the static sample data set are processed */
       if (rdd.toLocalIterator.nonEmpty) {
-          val temp = sqlContext.jsonRDD(rdd)
-          println(temp)
+          println("---------------")
+          println(Calendar.getInstance().getTime())
           sqlContext.jsonRDD(rdd).registerTempTable("ApiCall")
-          //jsonData.write.parquet("data/" + parquetTable + "/key=" + java.lang.System.currentTimeMillis())
-          //val extraFieldsRDD = sc.parallelize(""" {"lat":0.0,"lon":0.0}  """ :: Nil)
-          //val extraJsonFields = sqlContext.read.json(extraFieldsRDD)
-          //extraJsonFields.write.parquet("data/" + parquetTable + "/key=" + java.lang.System.currentTimeMillis())
-          //val parquetData = sqlContext.read.parquet("data/" + parquetTable)
-          //parquetData.registerTempTable("Tweets")
-          val tweetData = sqlContext.sql("""SELECT * FROM ApiCall""")
-          val address = tweetData.map(t => t(0)).collect().head
-          val action_time = java.util.UUID.fromString(new com.eaio.uuid.UUID().toString())
-          val text = tweetData.map(t => t(1)).collect().head
-          val profileUrl = tweetData.map(t => t(2)).collect().head
-          val p = geoUtil.fromIP(address.toString).getOrElse((0.0,0.0))
-          tweetData.show()
-          val collection = sc.parallelize(Seq(ApiCall(text.toString,
-                                                      0, address.toString, action_time,
-                                                      p._1,p._2)))
-          collection.saveToCassandra("docker_api_calls","aggregated_metrics")
+          val streamData = sqlContext.sql(sqlStatement)
+          streamData.na.drop().map(t => {
+          //streamData.map(t => {
+              val action = t(0).toString
+              val action_time = java.util.UUID.fromString(new com.eaio.uuid.UUID().toString())
+              val ip_address = t(1).toString
+              val counter = t(2).toString
+              val geo = geoUtil.fromIP(ip_address)
+              ApiCall(
+                action,
+                BigInt(counter),
+                ip_address,
+                action_time,
+                toDouble(geo.map(_.lng).getOrElse(0.0)),
+                toDouble(geo.map(_.lng).getOrElse(0.0)),
+                geo.map(_.city).flatten.getOrElse("N/A"),
+                geo.map(_.region).flatten.getOrElse("N/A"),
+                geo.map(_.countryCode).flatten.getOrElse("N/A"))
+              }
+          ).saveToCassandra("docker_api_calls","aggregated_metrics")
+          println("events processed")
+    println(Calendar.getInstance().getTime())
+          println("---------------")
       }
     }
-
-//   	.map { case (_, v) =>
-//               import org.sevenmob.spark.streaming.UUIDSerialiser
-//               implicit val formats = DefaultFormats + UUIDSerialiser
-//               JsonParser.parse(v)
-//              }
-//    val address = for {
-//          JObject(child) <- jsonData
-//          JField("location", JString(location)) <- child
-//        } yield location
-//    jsonData.print()
-//    address.print()
-//    val p = GeocodeObj ? (Parameters(address.toString, ""))
-//    val extraJsonFields = parse("{\"lat\":" +  p.lat + ", \"lon\": " + p.lng + "}") 
-   	//.saveToCassandra("twitter","tweets")
-    //val finalJson = jsonData ~ ("height" -> 175)
-//    val finalJson = jsonData merge extraJsonFields   
-    //println(extraJsonFields)
 
     // Start the computation
     ssc.start()
     ssc.awaitTermination()
   }
 }
-

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Docker HackDay Project</title>
+  <title>Docker API Events -- Realtime</title>
     <style type="text/css">
       h2 {
         margin:0px;
@@ -65,7 +65,7 @@
   <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.js"></script>
   <div id="main">
       <div id="container" style="position: relative; width: 800px; height: 480px; float: left; margin-right: 100px;">
-        <p style="margin-left: 40px; color: white;"><b>Last <span id="current_lookback"></span> Minutes</b></p>
+        <p style="margin-left: 40px; color: white;"><b>Last <span id="current_lookback"></span> Seconds</b></p>
         <input type="range" id="lookback" value="10" style="margin-left: 20px;"></div>
       </div>
 {#       <div>
@@ -105,67 +105,41 @@
         }
       });
 
-    var listOfTweets = {};
+    var listOfApiCalls = {};
+
     (function poll() {
          var lookback = document.getElementById("lookback").value;
          document.getElementById("current_lookback").innerHTML = lookback;
          setTimeout(function() {
              $.ajax({ 
-              url: "get_values",
+              url: "v1/pulls/coordinates",
               data : {'lookback': lookback},
               success: function(raw_data) {
                  var data = [];
+                 console.log(raw_data);
                  var results = raw_data['results'];
 
                  for (var i = 0; i < results.length; i++) {
-                    var tweet = results[i];
+                    var geo = results[i];
 
-                    var fillType = 'unknown'
                     var rad = 1
-                    var title = tweet['title'].toLowerCase();
+                    var action = "";
 
-                    if (title.indexOf("docker") > -1)
-                    {
-                        fillType = 'docker'
-                        rad = 9
-                    } else if (title.indexOf("mesosphere") > -1)
-                    {
-                        fillType = 'mesosphere'
-                        rad = 7
-                    } else if (title.indexOf("coreoslinux") > -1)
-                    {
-                        fillType = 'coreoslinux'
-                        rad = 10
-                    } else if (title.indexOf("quayio") > -1)
-                    {
-                        fillType = 'quayio'
-                        rad = 10
-                    } else if (title.indexOf("tutum") > -1)
-                    {
-                        fillType = 'tutum'
-                        rad = 10
-                    } else if (title.indexOf("kubernetesio") > -1)
-                    {
-                        fillType = 'kubernetesio'
-                        rad = 11
-                    } else if (title.indexOf("microsoft") > -1)
-                    {
-                        fillType = 'microsoft'
-                        rad = 11
-                    } else if (title.indexOf("google") > -1)
-                    {
-                        fillType = 'google'
-                        rad = 11
-                    } else if (title.indexOf("apple") > -1)
-                    {
-                        fillType = 'apple'
-                        rad = 11
+                    if (geo['title'] == "pull" || geo['title'] == "repository_images_get") {
+                      action = 'Pull'
+                    } else if (geo['title'] == "push" || geo['title'] == "repository_images_put") {
+                      action = 'Push'
+                    } else if (geo['title'] == "repo_search") {
+                      action = 'Search'
                     }
-                      
+                    console.log(action); 
 
-                    data.push({name: tweet['title'], 
-                      latitude: tweet['lat'], 
-                      longitude: tweet['lon'], 
+                    fillType = 'docker'
+                    rad = 9
+
+                    data.push({name: action, 
+                      latitude: geo['lat'], 
+                      longitude: geo['lon'], 
                       radius: rad, 
                       fillKey: fillType, 
                       borderWidth:0})
@@ -173,59 +147,39 @@
                 console.log(data.length);
                 map.bubbles(data);
                  for (var i = 0; i < results.length; i++) {
-                    var tweet = results[i];
-                    var id = tweet['id'];
+                    var geo = results[i];
+                    var action_time = geo['action_time'];
 
-                    if (id in listOfTweets)
+                    if (action_time in listOfApiCalls)
                       continue;
                     
-                    listOfTweets[id] = true;
+                    listOfApiCalls[action_time] = true;
                     var color = 'black'
-                    var title = tweet['title'].toLowerCase();
-                    var location = tweet['location']
+                    var action = '';
 
-                    if (!location) {
-                      location = 'unknown'
+                    if (geo['title'] == "pull" || geo['title'] == "repository_images_get") {
+                      action = 'Pull'
+                    } else if (geo['title'] == "push" || geo['title'] == "repository_images_put") {
+                      action = 'Push'
+                    } else if (geo['title'] == "repo_search") {
+                      action = 'Search'
                     }
-
-                    if (title.indexOf("docker") > -1)
-                    {
-                        color = 'white'
-                    } else if (title.indexOf("mesosphere") > -1)
-                    {
-                        color = 'yellow'
-                    } else if (title.indexOf("coreoslinux") > -1)
-                    {
-                        color = 'green'
-                    } else if (title.indexOf("quayio") > -1)
-                    {
-                        color = 'beige'
-                    } else if (title.indexOf("tutum") > -1)
-                    {
-                        color = 'yellowgreen'
-                    } else if (title.indexOf("kubernetesio") > -1)
-                    {
-                        color = 'red'
-                    } else if (title.indexOf("microsoft") > -1)
-                    {
-                        color = 'gray'
-                    } else if (title.indexOf("google") > -1)
-                    {
-                        color = 'lightyellow'
-                    } else if (title.indexOf("apple") > -1)
-                    {
-                        color = 'lightblue'
+                    country = geo['country']
+                    if (country) {
+                      country = country.toLowerCase();
                     }
+                    var flagURL = "https://raw.githubusercontent.com/stefangabos/world_countries/master/flags/48x48/" + country + ".png"
+                    color = 'white'
 
-                    $('#ticker').prepend('<li style= "padding-bottom: 20px;"><img class="circular" style= "height:50px; width: 50px;" src="' + tweet['profile_image_url'] + '"/> \
-                    <h2 style= "color:' + color + ';">' + tweet['title'] + '</h2> \
-                    <p class="ago" style= "color: lightgray;"><b>' + location + '</b></p></li>')
+                    $('#ticker').prepend('<li style= "padding-bottom: 20px;"><img class="circular" style= "height:50px; width: 50px;" src="' + flagURL + '"/> \
+                    <h2 style= "color:' + color + ';">' + action + '</h2> \
+                    <p class="ago" style= "color: lightgray;"><b>' + geo['city'] + ", " + geo['region'] + ", " + country+ '</b></p></li>')
                     $("#ticker").each(function(){
                      $(this).html( $(this).html().replace(/((http|https|ftp):\/\/[\w?=&.\/-;#~%-]+(?![\w\s?&.\/;#~%"=-]*>))/g, '<a href="$1">$1</a> ') );
                       });
                  };
              }, dataType: "json", complete: poll });
-          }, 1000);
+          }, 10000);
       })();
     })()
 

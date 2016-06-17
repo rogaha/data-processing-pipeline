@@ -1,119 +1,294 @@
-zookeeper:
-  image: wurstmeister/zookeeper
-  ports:
-    - "2181"
+version: '2'
+services:
+  cassandra-1:
+    image: cassandra
+    container_name: cassandra-1
+    environment:
+      - "CASSANDRA_BROADCAST_ADDRESS=cassandra-1.weave.local"
+      - "constraint:node==ip-172-31-31-183"
+    ports:
+    - 7000
+    restart: always
 
-kafka:
-  image: wurstmeister/kafka:0.8.2.1
-  ports:
-    - "9092:9092"
-  links:
-    - zookeeper:zk
-  environment:
-    # constraint:com.docker.network.driver.overlay.bind_interface=eth0
-    KAFKA_ADVERTISED_HOST_NAME: ""
-    KAFKA_CREATE_TOPICS: "tweets"
-  volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
+  cassandra-2:
+    image: cassandra
+    container_name: cassandra-2
+#    hostname: cassandra-2
+    environment:
+      - "constraint:node==ip-172-31-31-182"
+      - "CASSANDRA_BROADCAST_ADDRESS=cassandra-2.weave.local"
+      - "CASSANDRA_SEEDS=cassandra-1.weave.local"
+    ports:
+    - 7000
+    depends_on:
+      - cassandra-1
+    restart: always
 
-sparkmaster:
-  image: gettyimages/spark:1.6.1-hadoop-2.6
-  command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master -h master
-  hostname: master
-  environment:
-    - "SPARK_CONF_DIR=/conf"
-    - "constraint:node==docker-512mb-sfo1-02"
-    - "MASTER=spark://master:7077"
-  expose:
-    - 7001
-    - 7002
-    - 7003
-    - 7004
-    - 7005
-    - 7006
-    - 7077
-    - 6066
-  ports:
-    - 4040:4040
-    - 6066:6066
-    - 7077:7077
-    - 8080:8080
-  volumes:
-    - ./conf/master:/conf
-    - ./data:/tmp/data
+  cassandra-3:
+    image: cassandra
+    container_name: cassandra-3
+#    hostname: cassandra-3
+    environment:
+      - "constraint:node==ip-172-31-31-184"
+      - "CASSANDRA_BROADCAST_ADDRESS=cassandra-3.weave.local"
+      - "CASSANDRA_SEEDS=cassandra-1.weave.local"
+    ports:
+    - 7000
+    depends_on:
+      - cassandra-2
+    restart: always
 
-cassandra:
-  image: cassandra:2.2.0
-  hostname: cassandra
-  ports:
-    - "9042:9042"
+  cassandra-4:
+    image: cassandra
+    container_name: cassandra-4
+#    hostname: cassandra-3
+    environment:
+      - "constraint:node==ip-172-31-31-185"
+      - "CASSANDRA_BROADCAST_ADDRESS=cassandra-4.weave.local"
+      - "CASSANDRA_SEEDS=cassandra-1.weave.local"
+    ports:
+    - 7000
+    depends_on:
+      - cassandra-3
+    restart: always
 
-sparkworker:
-  image: gettyimages/spark:1.6.1-hadoop-2.6
-  command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-  hostname: worker
-  environment:
-    SPARK_CONF_DIR: /conf
-    SPARK_WORKER_CORES: 1
-    SPARK_WORKER_MEMORY: 1g
-    SPARK_WORKER_PORT: 8881
-    SPARK_WORKER_WEBUI_PORT: 8081
-  # links:
-  #   - kafka
-  #   - sparkmaster
-  #   - cassandra
-  expose:
-    - 7012
-    - 7013
-    - 7014
-    - 7015
-    - 7016
-    - 8881
-  ports:
-    - 8081:8081
-  volumes:
-    - ./conf/worker:/conf
-    - ./data:/tmp/data
+  cassandra-5:
+    image: cassandra
+    container_name: cassandra-5
+#    hostname: cassandra-3
+    environment:
+      - "constraint:node==ip-172-31-22-39"
+      - "CASSANDRA_BROADCAST_ADDRESS=cassandra-5.weave.local"
+      - "CASSANDRA_SEEDS=cassandra-1.weave.local"
+    ports:
+    - 7000
+    depends_on:
+      - cassandra-4
+    restart: always
 
-twitterkafkaproducer:
-  image: rogaha/twitter-kafka-producer
-  restart: always
-  command: /start.sh
-  hostname: twitterkafkaproducer
-  environment:
-    SPARK_CONF_DIR: /conf
-    ACCESS_TOKEN: ""
-    ACCESS_TOKEN_SECRET: ""
-    CONSUMER_KEY: ""
-    CONSUMER_SECRET: ""
-    KEYWORDS_LIST: ""
-    KAFKA_TOPIC_NAME: "tweets"
-  links:
-    - kafka
+  spark-hdfs-namenode:
+    image: rogaha/spark-hdfs-base
+    restart: always
+    command: /usr/bin/startup_namenode.sh
+    container_name: spark-hdfs-namenode
+ #   hostname: spark-hdfs-namenode
+    environment:
+      - "constraint:node==ip-172-31-31-184"
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 9000
+      - 50070
 
-webserver:
-  image: rogaha/twitter-demo-webserver
-  restart: always
-  command: /start.sh
-  hostname: webserver
-  # links:
-  #   - cassandra
-  ports:
-    - "80:5000"
+  spark-hdfs-datanode:
+    image: rogaha/spark-hdfs-base
+    restart: always
+    command: /usr/bin/startup_datanode.sh
+    container_name: spark-hdfs-datanode
+  #  hostname: spark-hdfs-datanode
+    environment:
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "constraint:node==ip-172-31-31-184"
+    depends_on:
+      - spark-hdfs-namenode
+    expose:
+      - 50010
+      - 50020
+      - 50070
+      - 50075
+      - 50090
+      - 8020
+      - 9000
+    ports:
+      - 9000
+      - 50070
 
-sparkjob:
-  image: rogaha/spark-job-v2
-  restart: always
-  command: /spark-job/start.sh
-  hostname: spark-job
-  environment:
-      - "constraint:node==docker-512mb-sfo1-02"
+  sparkmaster:
+    image: rogaha/spark-hdfs-base
+    command: /usr/bin/startup_master.sh
+    container_name: sparkmaster
+#    hostname: sparkmaster
+    environment:
       - "SPARK_CONF_DIR=/conf"
-      - "KAFKA_TOPIC_NAME=repo_events,search_events"
-      - "KAFKA_BROKERS=10.1.13.103:9092,10.1.24.78:9092,10.1.25.176:9092,10.1.44.150:9092,10.1.45.137:9092"
-      - "CASSANDRA_HOSTNAME=cassandra-1"
-  # links:
-  #   - kafka
-  #   - sparkmaster
-  #   - cassandra
+      - "constraint:node==ip-172-31-31-184"
+      - "MASTER=spark://sparkmaster.weave.local:7077"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+    expose:
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7006
+      - 7077
+      - 6066
+    ports:
+      - 4040
+      - 6066
+      - 7077
+      - 8080
+    volumes:
+      - ./conf/master:/conf
 
+  sparkworker1:
+    image: rogaha/sparkworker-docker-pipeline
+    command: /usr/bin/startup_worker.sh
+    container_name: sparkworker1
+#    hostname: sparkworker1
+    environment:
+      - "constraint:node==ip-172-31-31-183"
+      - "SPARK_CONF_DIR=/conf"
+      - "SPARK_WORKER_CORES=8"
+      - "SPARK_WORKER_MEMORY=8g"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "MASTER_HOSTNAME=sparkmaster.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+      - sparkmaster
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081
+      - 4040
+    volumes:
+      - ./conf/worker:/conf
+
+  sparkworker2:
+    image: rogaha/sparkworker-docker-pipeline
+    command: /usr/bin/startup_worker.sh
+    container_name: sparkworker2
+#    hostname: sparkworker2
+    environment:
+      - "constraint:node==ip-172-31-31-182"
+      - "SPARK_CONF_DIR=/conf"
+      - "SPARK_WORKER_CORES=8"
+      - "SPARK_WORKER_MEMORY=8g"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "MASTER_HOSTNAME=sparkmaster.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+      - sparkmaster
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081
+      - 4040
+      - 4041
+    volumes:
+      - ./conf/worker:/conf
+
+  sparkworker3:
+    image: rogaha/sparkworker-docker-pipeline
+    command: /usr/bin/startup_worker.sh
+    container_name: sparkworker3
+ #   hostname: sparkworker3
+    environment:
+      - "constraint:node==ip-172-31-31-185"
+      - "SPARK_CONF_DIR=/conf"
+      - "SPARK_WORKER_CORES=8"
+      - "SPARK_WORKER_MEMORY=8g"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "MASTER_HOSTNAME=sparkmaster.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+      - sparkmaster
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081
+      - 4040
+      - 4041
+    volumes:
+      - ./conf/worker:/conf
+
+  sparkworker4:
+    image: rogaha/sparkworker-docker-pipeline
+    command: /usr/bin/startup_worker.sh
+    container_name: sparkworker4
+ #   hostname: sparkworker3
+    environment:
+      - "constraint:node==ip-172-31-31-184"
+      - "SPARK_CONF_DIR=/conf"
+      - "SPARK_WORKER_CORES=8"
+      - "SPARK_WORKER_MEMORY=8g"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "MASTER_HOSTNAME=sparkmaster.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+      - sparkmaster
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081
+      - 4040
+      - 4041
+    volumes:
+      - ./conf/worker:/conf
+
+  sparkworker5:
+    image: rogaha/sparkworker-docker-pipeline
+    command: /usr/bin/startup_worker.sh
+    container_name: sparkworker5
+ #   hostname: sparkworker3
+    environment:
+      - "constraint:node==ip-172-31-22-39"
+      - "SPARK_CONF_DIR=/conf"
+      - "SPARK_WORKER_CORES=16"
+      - "SPARK_WORKER_MEMORY=30g"
+      - "NAMENODE_HOSTNAME=spark-hdfs-namenode.weave.local"
+      - "MASTER_HOSTNAME=sparkmaster.weave.local"
+    depends_on:
+      - spark-hdfs-namenode
+      - spark-hdfs-datanode
+      - sparkmaster
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    ports:
+      - 8081
+      - 4040
+      - 4041
+    volumes:
+      - ./conf/worker:/conf
+
+#networks:
+#  default:
+#    external:
+#       name: net-pipeline

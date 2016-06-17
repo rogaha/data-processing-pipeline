@@ -8,11 +8,11 @@ scalaVersion := "2.10.4"
 resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 
 // kafka streaming related dependencies
-libraryDependencies += "org.apache.spark" %% "spark-core" % "1.6.1"
-libraryDependencies += "org.apache.spark" %% "spark-sql"  % "1.6.1"
-libraryDependencies += "org.apache.spark" % "spark-streaming_2.10" % "1.6.1"
-libraryDependencies += "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.6.1"
-libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.6.0"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "1.5.2"
+libraryDependencies += "org.apache.spark" %% "spark-sql"  % "1.5.2"
+libraryDependencies += "org.apache.spark" % "spark-streaming_2.10" % "1.5.2"
+libraryDependencies += "org.apache.spark" % "spark-streaming-kafka_2.10" % "1.5.2"
+libraryDependencies += "com.datastax.spark" %% "spark-cassandra-connector" % "1.5.2"
 libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.11"
 libraryDependencies += "com.eaio.uuid" % "uuid" % "3.2"
 
@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
     )
 
 assemblyShadeRules in assembly := Seq(
+  ShadeRule.rename("com.google.**"                       -> "shadeio.@1").inAll,
   ShadeRule.rename("com.fasterxml.jackson.core.**"       -> "shadedjackson.core.@1").inAll,
   ShadeRule.rename("com.fasterxml.jackson.annotation.**" -> "shadedjackson.annotation.@1").inAll,
   ShadeRule.rename("com.fasterxml.jackson.databind.**"   -> "shadedjackson.databind.@1").inAll
