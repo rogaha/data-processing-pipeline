@@ -17,7 +17,7 @@ kafka:
     - /var/run/docker.sock:/var/run/docker.sock
 
 sparkmaster:
-  image: gettyimages/spark:1.4.0-hadoop-2.6
+  image: gettyimages/spark:1.4.1-hadoop-2.6
   command: /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master --ip master
   hostname: master
   environment:
@@ -38,7 +38,7 @@ cassandra:
     - "9042:9042"
 
 sparkworker:
-  image: gettyimages/spark:1.4.0-hadoop-2.6
+  image: gettyimages/spark:1.4.1-hadoop-2.6
   command: /usr/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker
   environment:

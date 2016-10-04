@@ -30,13 +30,13 @@ $ wget -qO- https://get.docker.com/ | sh
 
 ###Docker Machine (https://docs.docker.com/machine/install-machine/)
 ```
-$ curl -L https://github.com/docker/machine/releases/download/v0.3.0/docker-machine_`uname -s`-amd64 > /usr/local/bin/docker-machine
+$ curl -L https://github.com/docker/machine/releases/download/v0.8.2/docker-machine_`uname -s`-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
 ###Docker Compose (https://docs.docker.com/compose/install/)
 ```
-$ curl -L https://github.com/docker/compose/releases/download/1.3.3/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+$ curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
 $ chmod +x /usr/local/bin/docker-compose
 ```
 
@@ -133,7 +133,6 @@ Creating dataprocessingpipeline_sparkworker_1...
 After that you should wait a few seconds, I've a 15 seconds delay before starting the spark-job, kafka producer and webcontainer containers, in order to make all the dependencies are up and running.
 ###Step 5: Access the IP/Hostname of your machine from your browser
 I've cloned this repo, updated the environment variables and started the containers on Azure. 
-####Here is the link to access a live instance: http://docker-azure.cloudapp.net/
 
 ##Open Source Projects Used
 
