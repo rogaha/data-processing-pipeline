@@ -1,7 +1,7 @@
 DATA-PROCESSING-PIPELINE
 ==============
 
-##Description
+## Description
 
 Build a powerful *Real-Time Data Processing Pipeline & Visualization* solution using Docker Machine and Compose, Kafka, Cassandra and Spark in 5 steps.
 
@@ -16,32 +16,32 @@ Finally, there is a web application running that is fetching data from Cassandra
 
 ![Project Screenshot](images/screenshot.png "Docker Hackday Project")
 
-###Some Interesting Project Stats
+### Some Interesting Project Stats
 ##### Number of Containers: 8
 ##### Number of Open Source Projects Used: 8
 ##### Number of Programming Languages Used: 4 (Python, Bash, Scala, Java)
 
-##Pre-requisites
+## Pre-requisites
 
-###Docker (https://docs.docker.com/installation/)
+### Docker (https://docs.docker.com/installation/)
 ```
 $ wget -qO- https://get.docker.com/ | sh
 ```
 
-###Docker Machine (https://docs.docker.com/machine/install-machine/)
+### Docker Machine (https://docs.docker.com/machine/install-machine/)
 ```
 $ curl -L https://github.com/docker/machine/releases/download/v0.8.2/docker-machine_`uname -s`-amd64 > /usr/local/bin/docker-machine
 $ chmod +x /usr/local/bin/docker-machine
 ```
 
-###Docker Compose (https://docs.docker.com/compose/install/)
+### Docker Compose (https://docs.docker.com/compose/install/)
 ```
 $ curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
 $ chmod +x /usr/local/bin/docker-compose
 ```
 
-##Project Installation / Usage
-###Step 1: Create a VM with Docker
+## Project Installation / Usage
+### Step 1: Create a VM with Docker
 If you already have a VM running or if you are on Linux, you can skip this step. Otherwise, the steps are the following:
 
 #### On Digital Ocean
@@ -79,7 +79,7 @@ By default *docker-machine* will spin up an Ubuntu 14.04 instance on all cloud p
 $ docker-machine ssh Docker-VM
 ```
 
-###Step 2: Getting Twitter API keys
+### Step 2: Getting Twitter API keys
 
 In order to access Twitter Streaming API, we need to get 4 pieces of information from Twitter: API key, API secret, Access token and Access token secret. Follow the steps below to get all 4 elements:
 <pre>
@@ -91,7 +91,7 @@ In the next page, click on "API keys" tab, and copy your "API key" and "API secr
 Scroll down and click "Create my access token", and copy your "Access token" and "Access token secret".
 </pre>
 
-###Step 3: Clone this repo and update the docker-compose.yml file (https://docs.docker.com/compose/yml/)
+### Step 3: Clone this repo and update the docker-compose.yml file (https://docs.docker.com/compose/yml/)
 First you need to clone this repo:
 ```
 $ git clone git@github.com:rogaha/data-processing-pipeline.git
@@ -113,7 +113,7 @@ $ /sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'
 
 The *KEYWORDS_LIST* shoud be a comma separated string, such as: "python, scala, golang"
 
-###Step 4: Start All the Containers
+### Step 4: Start All the Containers
 With docker-compose you can just run:
 ```
 $ docker-compose up -d
@@ -131,24 +131,24 @@ Creating dataprocessingpipeline_sparkworker_1...
 ```
 
 After that you should wait a few seconds, I've a 15 seconds delay before starting the spark-job, kafka producer and webcontainer containers, in order to make all the dependencies are up and running.
-###Step 5: Access the IP/Hostname of your machine from your browser
+### Step 5: Access the IP/Hostname of your machine from your browser
 I've cloned this repo, updated the environment variables and started the containers on Azure. 
 
-##Open Source Projects Used
+## Open Source Projects Used
 
-####Docker (https://github.com/docker/docker)
+#### Docker (https://github.com/docker/docker)
 An open platform for distributed applications for developers and sysadmins
-####Docker Machine (https://github.com/docker/machine)
+#### Docker Machine (https://github.com/docker/machine)
 Lets you create Docker hosts on your computer, on cloud providers, and inside your own data center
-####Docker Compose (https://github.com/docker/compose)
+#### Docker Compose (https://github.com/docker/compose)
 Tool for defining and running multi-container applications with Docker
-####Apache Spark / Spark SQL (https://github.com/apache/spark)
+#### Apache Spark / Spark SQL (https://github.com/apache/spark)
  A fast, in-memory data processing engine. Spark SQL lets you query structured data as a resilient distributed dataset (RDD)
-####Apache Kafka (https://github.com/apache/kafka)
+#### Apache Kafka (https://github.com/apache/kafka)
 A fast and scalable pub-sub messaging service
-####Apache Kookeeper (https://github.com/apache/zookeeper)
+#### Apache Kookeeper (https://github.com/apache/zookeeper)
 A distributed configuration service, synchronization service, and naming registry for large distributed systems
-####Apache Cassandra (https://github.com/apache/cassandra)
+#### Apache Cassandra (https://github.com/apache/cassandra)
  Scalable, high-available and distributed columnar NoSQL database
-####D3 (https://github.com/mbostock/d3)
+#### D3 (https://github.com/mbostock/d3)
 A JavaScript visualization library for HTML and SVG. 
