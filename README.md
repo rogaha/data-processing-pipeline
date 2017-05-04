@@ -9,7 +9,7 @@ See below the project's architecture:
 
 ![Docker Architecture](images/project-architecture.png "Project Architecture")
 
-##What's happening under the hood? 
+## What's happening under the hood? 
 We connect to the twitter streaming API (https://dev.twitter.com/streaming/overview) and start to listen to events based on a list of keywords, these events are forwarded directly to Kafka (no parsing). In the middle, there is a spark job collecting those events, converting them to Spark SQL context (http://spark.apache.org/sql/) which filters the kafka message and extract only the fields of interest which in this case are: *user.location, text and user.profile_image_url*, once we have that, we convert the *location* into coordinates (lat,lng) using the google geoconding API (https://developers.google.com/maps/documentation/geocoding/intro) and persist the data into Cassandra. 
 
 Finally, there is a web application running that is fetching data from Cassandra and rendering the tweets of interest on the world map.
